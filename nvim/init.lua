@@ -1,8 +1,10 @@
 -- All them plugins
 
 require('packer').startup(function(use)
+    use 'folke/lsp-colors.nvim'
+    use 'wbthomason/packer.nvim'
     use 'preservim/nerdtree'
-    use 'morhetz/gruvbox'
+    use 'shaunsingh/nord.nvim'
     use 'voldikss/vim-floaterm'
     use 'neovim/nvim-lspconfig'
     use 'hrsh7th/cmp-nvim-lsp'
@@ -10,10 +12,9 @@ require('packer').startup(function(use)
     use 'hrsh7th/cmp-path'
     use 'hrsh7th/cmp-cmdline'
     use 'hrsh7th/nvim-cmp'
-    use 'hrsh7th/vim-vsnip'
+    use 'saadparwaiz1/cmp_luasnip'
     use 'ryanoasis/vim-devicons'
-    use 'vim-airline/vim-airline'
-    use 'vim-airline/vim-airline-themes'
+    use 'L3MON4D3/LuaSnip'
     use {
         'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate'
@@ -22,14 +23,33 @@ require('packer').startup(function(use)
         'nvim-telescope/telescope.nvim',
         requires = { {'nvim-lua/plenary.nvim'} }
     }
+    -- Lua
+    use {
+        "folke/trouble.nvim",
+        requires = "kyazdani42/nvim-web-devicons",
+        config = function()
+          require("trouble").setup {
+            -- your configuration comes here
+            -- or leave it empty to use the default settings
+            -- refer to the configuration section below
+          }
+        end
+    }
+    use {
+        'nvim-lualine/lualine.nvim',
+        requires = { 'kyazdani42/nvim-web-devicons', opt = true }
+    }
     
 end)
+
+-- lualine
+
+require('lualine').setup{options = { theme = 'nord'}}
+
 
 -- Basic config
 
 vim.g.mapleader = ' '
-vim.g.airline_theme = 'deus'
-
 local opt = vim.opt
 
 opt.relativenumber         =          true
@@ -48,7 +68,8 @@ opt.syntax                 =          'on'
 opt.mouse                  =          'a'
 
 vim.cmd('au TextYankPost * lua vim.highlight.on_yank {on_visual = false}')
-vim.cmd('colorscheme gruvbox')
+vim.cmd('set clipboard+=unnamedplus')
+
 -- Window movement
 
 vim.api.nvim_set_keymap("n", "<Leader>h", "<C-w><C-h>", {noremap=true})
@@ -71,9 +92,18 @@ vim.api.nvim_set_keymap("n", "tl", ":tabnext<CR>", {noremap=true})
 
 vim.api.nvim_set_keymap("i", "ii", "<Esc>", {noremap=true})
 
--- Normal panic save
+-- Insert mode panic save
 
 vim.api.nvim_set_keymap("i", "<C-s>", "<Esc>:w<CR>", {noremap=false})
+
+-- Trouble keymaps
+
+vim.api.nvim_set_keymap("n", "<leader>xx", "<cmd>TroubleToggle<CR>",
+    {silent=true, noremap=false})
+vim.api.nvim_set_keymap("n", "<leader>xw", "<cmd>Trouble workspace_diagnostics<CR>",
+    {silent=true, noremap=false})
+vim.api.nvim_set_keymap("n", "<leader>xd", "<cmd>Trouble document_diagnostics<CR>",
+    {silent=true, noremap=false})
 
 -- Flying terminal, makes you kool
 
@@ -97,7 +127,7 @@ vim.cmd('set completeopt=menu,menuone,noselect')
 cmp.setup({
     snippet = {
         expand = function(args)
-            vim.fn["vsnip#anonymous"](args.body) -- For vsnip users.
+            require('luasnip').lsp_expand(args.body)
         end,
     },
     mapping = {
@@ -113,7 +143,7 @@ cmp.setup({
     },
     sources = cmp.config.sources({
         { name = 'nvim_lsp' },
-        { name = 'vsnip' }, -- For vsnip users.
+        { name = 'luasnip' }, -- For vsnip users.
     }, {
         { name = 'buffer' },
     })
@@ -137,7 +167,72 @@ cmp.setup.cmdline(':', {
 
 -- Setup lspconfig.
 local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
--- Replace <YOUR_LSP_SERVER> with each lsp server you've enabled.
-require('lspconfig')['pyright'].setup {
+capabilities.textDocument.completion.completionItem.snippetSupport = true
+
+local lspconfig = require'lspconfig'
+local configs = require'lspconfig/configs'    
+
+if not lspconfig.emmet_ls then    
+  configs.emmet_ls = {    
+    default_config = {    
+      cmd = {'emmet-ls', '--stdio'};
+      filetypes = {'html', 'css', 'blade'};
+      root_dir = function(fname)    
+        return vim.loop.cwd()
+      end;    
+      settings = {};    
+    };    
+  }    
+end
+
+local servers = {'pyright', 'intelephense', 'tsserver', 'emmet_ls'}
+for _, lsp in pairs(servers) do
+  require('lspconfig')[lsp].setup {
     capabilities = capabilities
+  }
+end
+
+
+require'lspconfig'.html.setup {
+  capabilities = capabilities,
 }
+
+
+require'nvim-treesitter.configs'.setup {
+  -- One of "all", "maintained" (parsers with maintainers), or a list of languages
+  ensure_installed = "maintained",
+
+  -- Install languages synchronously (only applied to `ensure_installed`)
+  sync_install = false,
+
+  -- List of parsers to ignore installing
+  -- ignore_install = { "javascript" },
+
+  highlight = {
+    -- `false` will disable the whole extension
+    enable = true,
+
+    -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
+    -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
+    -- Using this option may slow down your editor, and you may see some duplicate highlights.
+    -- Instead of true it can also be a list of languages
+    additional_vim_regex_highlighting = false,
+  },
+}
+
+
+
+vim.cmd('autocmd CursorMoved * :lua vim.diagnostic.open_float()')
+
+
+
+-- colorscheme
+
+-- Example config in lua
+vim.g.nord_contrast = true
+vim.g.nord_borders = false
+vim.g.nord_disable_background = false
+vim.g.nord_italic = true
+
+-- Load the colorscheme
+require('nord').set()
