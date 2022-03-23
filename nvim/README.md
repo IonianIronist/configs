@@ -1,7 +1,7 @@
 Ok so it was second time that I was re-figuring out how to setup everything to work,
 so I decided to make a few notes here
 
-# Dependancies:
+# Dependεncies:
 
 - Should install [packer](https://github.com/wbthomason/packer.nvim) first.
 - For the lsp servers node is needed, so [nvm](https://github.com/nvm-sh/nvm) on linux and [nvs](https://github.com/jasongin/nvs) for windows
