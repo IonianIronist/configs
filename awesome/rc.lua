@@ -20,7 +20,7 @@ local hotkeys_popup = require("awful.hotkeys_popup")
 require("awful.hotkeys_popup.keys")
 
 -- Load Debian menu entries
-local debian = require("debian.menu")
+--local debian = require("debian.menu")
 local has_fdo, freedesktop = pcall(require, "freedesktop")
 
 -- {{{ Error handling
@@ -107,7 +107,7 @@ else
     mymainmenu = awful.menu({
         items = {
                   menu_awesome,
-                  { "Debian", debian.menu.Debian_menu.Debian },
+                  --{ "Debian", debian.menu.Debian_menu.Debian },
                   menu_terminal,
                 }
     })
@@ -222,7 +222,7 @@ awful.screen.connect_for_each_screen(function(s)
 
     -- Create the wibox
     s.mywibox = awful.wibar({ position = "top", screen = s })
-    local weather_widget = require("awesome-wm-widgets.weather-widget.weather")
+    -- local weather_widget = require("awesome-wm-widgets.weather-widget.weather")
     local net_speed_widget = require("awesome-wm-widgets.net-speed-widget.net-speed")
     local cpu_widget = require("awesome-wm-widgets.cpu-widget.cpu-widget")
     local ram_widget = require("awesome-wm-widgets.ram-widget.ram-widget")
@@ -244,12 +244,12 @@ awful.screen.connect_for_each_screen(function(s)
             ram_widget(),
             cpu_widget(),
             net_speed_widget(),
-            weather_widget({
-                api_key='2b8224e7844ad3b35c668a8c36ba20f2',
-                coordinates = {43.3211301, 21.8959232},
-            }),
+            --weather_widget({
+            --    api_key='2b8224e7844ad3b35c668a8c36ba20f2',
+            --    coordinates = {43.3211301, 21.8959232},
+            --}),
             mytextclock,
-            s.mylayoutbox,
+            --s.mylayoutbox,
         },
     }
 end)
@@ -307,7 +307,7 @@ globalkeys = gears.table.join(
               {description = "move tag to the left", group = "tag"}),
     awful.key({ modkey, "Shift" }, "Right", function () lain.util.move_tag(1) end,
               {description = "move tag to the right", group = "tag"}),
-    awful.key({ modkey, "Shift" }, "d", function () lain.util.delete_tag() end,
+    awful.key({ modkey, "Shift" }, "x", function () lain.util.delete_tag() end,
               {description = "delete tag", group = "tag"}),
 
 

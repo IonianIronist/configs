@@ -30,8 +30,11 @@ local nord = {
     "#B48EAD"
     }
 
-theme.font          = "Fira Code Nerd Font SemiBold 8"
-theme.taglist_font  = "Fira Code Nerd Font SemiBold 13"
+--theme.font          = "FiraMono Nerd Font Medium 8"
+--theme.taglist_font  = "FiraMono Nerd Font Medium 13"
+
+theme.font          = "FiraCode NF Medium 8"
+theme.taglist_font  = "FiraCode NF Bold 15"
 
 theme.bg_normal     = nord[1]
 theme.bg_focus      = nord[2]
@@ -90,7 +93,7 @@ theme.menu_width  = dpi(100)
 -- beautiful.variable in your rc.lua
 --theme.bg_widget = "#cc0000"
 
-theme.wallpaper = "/home/nemantzia/Downloads/wallpapers/elephants.jpg"
+theme.wallpaper = "/home/nemantzia/Downloads/wallpapers/big_gun_back_turned.jpg"
 
 -- You can use your own layout icons like this:
 theme.layout_fairh = themes_path.."default/layouts/fairhw.png"

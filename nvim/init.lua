@@ -1,5 +1,9 @@
 -- All them plugins
 require('packer').startup(function(use)
+    use {
+        'nvim-lualine/lualine.nvim',
+        requires = { 'kyazdani42/nvim-web-devicons', opt = true }
+    }
     use 'folke/lsp-colors.nvim'
     use 'wbthomason/packer.nvim'
     use 'shaunsingh/nord.nvim'
@@ -19,11 +23,8 @@ require('packer').startup(function(use)
     use 'onsails/lspkind-nvim'
     use 'preservim/nerdtree'
     use 'ThePrimeagen/harpoon'
+    use 'iamcco/markdown-preview.nvim'
     use { 'alvarosevilla95/luatab.nvim', requires='kyazdani42/nvim-web-devicons' }
-    use {
-        'nvim-treesitter/nvim-treesitter',
-        run = ':TSUpdate'
-    }
     use {
         'nvim-telescope/telescope.nvim',
         requires = { {'nvim-lua/plenary.nvim'} }
@@ -33,19 +34,18 @@ require('packer').startup(function(use)
         requires = "kyazdani42/nvim-web-devicons",
         config = function() require("trouble").setup {} end
     }
-    use {
-        'nvim-lualine/lualine.nvim',
-        requires = { 'kyazdani42/nvim-web-devicons', opt = true }
-    }
     use 'windwp/nvim-autopairs'
+    use {
+        'nvim-treesitter/nvim-treesitter',
+        run = ':TSUpdate'
+    }
 end)
 
 -- lualine
 
-require('lualine').setup{options = { theme = 'nord'}}
-
 require('nvim-autopairs').setup{}
-require('luatab').setup {}
+require('lualine').setup()
+require('luatab').setup{}
 -- Basic config
 
 vim.g.mapleader = ' '
@@ -54,13 +54,14 @@ local opt = vim.opt
 opt.relativenumber         =          true
 opt.termguicolors          =          true
 opt.expandtab              =          true
-opt.wildmenu               =          true 
+opt.wildmenu               =          true
 opt.number                 =          true
 opt.ruler                  =          true
+opt.cursorline             =          true
 opt.wrap                   =          false
 opt.showcmd                =          true
 opt.shiftwidth             =          4
-opt.background             =          'dark' 
+opt.background             =          'dark'
 opt.scrolloff              =          7
 opt.tabstop                =          4
 opt.syntax                 =          'on'
@@ -125,7 +126,6 @@ vim.api.nvim_set_keymap("n", "ff", ":lua require('telescope.builtin').find_files
 vim.api.nvim_set_keymap("n", "fg", ":lua require('telescope.builtin').live_grep()<CR>", {noremap=true})
 
 -- Lsp, autocomplete, snippets
-
 require('lspconfig').pyright.setup{}
 
 vim.cmd('set completeopt=menu,menuone,noselect')
@@ -142,7 +142,10 @@ cmp.setup({
         ['<C-b>'] = cmp.mapping(cmp.mapping.scroll_docs(-4), { 'i', 'c' }),
         ['<C-f>'] = cmp.mapping(cmp.mapping.scroll_docs(4), { 'i', 'c' }),
         ['<C-Space>'] = cmp.mapping(cmp.mapping.complete(), { 'i', 'c' }),
-        ['<C-y>'] = cmp.config.disable, -- Specify cmp.config.disable if you want to remove the default <C-y> mapping.
+        ['<C-n>'] = cmp.mapping.select_next_item(),
+        ['<C-p>'] = cmp.mapping.select_prev_item(),
+        ['<Down>'] = cmp.mapping.select_next_item(),
+        ['<Up>'] = cmp.mapping.select_prev_item(),
         ['<C-e>'] = cmp.mapping({
           i = cmp.mapping.abort(),
           c = cmp.mapping.close(),
@@ -180,19 +183,19 @@ local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protoco
 capabilities.textDocument.completion.completionItem.snippetSupport = true
 
 local lspconfig = require'lspconfig'
-local configs = require'lspconfig/configs'    
+local configs = require'lspconfig/configs'
 
-if not lspconfig.emmet_ls then    
-  configs.emmet_ls = {    
-    default_config = {    
+if not lspconfig.emmet_ls then
+  configs.emmet_ls = {
+    default_config = {
       cmd = {'emmet-ls', '--stdio'};
       filetypes = {'html', 'css', 'blade'};
-      root_dir = function(fname)    
+      root_dir = function()
         return vim.loop.cwd()
-      end;    
-      settings = {};    
-    };    
-  }    
+      end;
+      settings = {};
+    };
+  }
 end
 
 local servers = {'pyright', 'intelephense', 'tsserver', 'emmet_ls'}
@@ -210,7 +213,7 @@ require'lspconfig'.html.setup {
 
 require'nvim-treesitter.configs'.setup {
   -- One of "all", "maintained" (parsers with maintainers), or a list of languages
-  ensure_installed = "maintained",
+  ensure_installed = "all",
 
   -- Install languages synchronously (only applied to `ensure_installed`)
   sync_install = false,
@@ -242,17 +245,14 @@ require('rust-tools').setup({})
 vim.g.nord_contrast = true
 vim.g.nord_borders = true
 vim.g.nord_disable_background = false
-vim.g.nord_italic = true
-
+vim.g.nord_italic = false
+vim.g.nord_cursorline_transparent = false
 -- Load the colorscheme
-require('nord').set()
+vim.cmd[[colorscheme nord]]
 
 
 
 -- RUST
-
-local nvim_lsp = require'lspconfig'
-
 local opts = {
     tools = { -- rust-tools options
         autoSetHints = true,
@@ -285,4 +285,42 @@ local opts = {
 
 require('rust-tools').setup(opts)
 
+local runtime_path = vim.split(package.path, ';')
+table.insert(runtime_path, "lua/?.lua")
+table.insert(runtime_path, "lua/?/init.lua")
 
+require'lspconfig'.sumneko_lua.setup {
+  settings = {
+    Lua = {
+      runtime = {
+        -- Tell the language server which version of Lua you're using (most likely LuaJIT in the case of Neovim)
+        version = 'LuaJIT',
+        -- Setup your lua path
+        path = runtime_path,
+      },
+      diagnostics = {
+        -- Get the language server to recognize the `vim` global
+        globals = {'vim'},
+      },
+      workspace = {
+        -- Make the server aware of Neovim runtime files
+        library = vim.api.nvim_get_runtime_file("", true),
+      },
+      -- Do not send telemetry data containing a randomized but unique identifier
+      telemetry = {
+        enable = false,
+      },
+    },
+  },
+}
+
+-- Please reopen where i left
+
+vim.cmd(
+[[
+:au BufReadPost *
+   \ if line("'\"") > 1 && line("'\"") <= line("$") && &ft !~# 'commit'
+   \ |   exe "normal! g`\""
+   \ | endif
+]]
+) -- thank you viml black magic practitioners
