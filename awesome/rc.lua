@@ -51,6 +51,43 @@ end
 -- {{{ Variable definitions
 -- Themes define colours, icons, font and wallpapers.
 beautiful.init("/home/nemantzia/.config/awesome/themes/theme.lua")
+function split (inputstr, sep)
+        if sep == nil then
+                sep = "%s"
+        end
+        local t={}
+        for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+                table.insert(t, str)
+        end
+        return t
+end
+local tmp_file = '/home/nemantzia/tmp/.awesome_wallpaper_idx'
+local wallpapers_dir = '/home/nemantzia/Downloads/Wallpapers/sfw/'
+-- 
+local file_handle = io.input(tmp_file)
+idx = io.read("*number")
+function change_wallpaper(direction)
+    print(idx)
+    file_handle = io.popen("ls -1 " .. wallpapers_dir)
+    local wallpapers = split(file_handle:read("*a"), '\n')
+    file_handle:close()
+    if direction == 1 and idx+1 < #wallpapers then
+        gears.wallpaper.fit(wallpapers_dir .. wallpapers[idx+1])
+        idx = idx + 1
+    elseif direction == 1 then
+        gears.wallpaper.fit(wallpapers_dir .. wallpapers[1])
+        idx = 1
+    elseif direction == -1 and idx-1 > 1 then
+        gears.wallpaper.fit(wallpapers_dir .. wallpapers[idx-1])
+        idx = idx-1
+    elseif direction == -1 then
+        gears.wallpaper.fit(wallpapers_dir .. wallpapers[#wallpapers])
+        idx = #wallpapers
+    end
+end
+
+
+
 
 -- This is used later as the default terminal and editor to run.
 terminal = "kitty"
@@ -66,8 +103,8 @@ modkey = "Mod4"
 
 -- Table of layouts to cover with awful.layout.inc, order matters.
 awful.layout.layouts = {
-    -- awful.layout.suit.floating,
     awful.layout.suit.tile,
+    awful.layout.suit.floating,
     awful.layout.suit.tile.left,
     awful.layout.suit.tile.bottom,
     awful.layout.suit.tile.top,
@@ -249,7 +286,7 @@ awful.screen.connect_for_each_screen(function(s)
             --    coordinates = {43.3211301, 21.8959232},
             --}),
             mytextclock,
-            --s.mylayoutbox,
+            s.mylayoutbox,
         },
     }
 end)
@@ -298,6 +335,20 @@ globalkeys = gears.table.join(
         {description = "go back", group = "client"}),
     
 
+
+    -- Wallpapers shortcuts
+    awful.key({ modkey,  }, "#86", 
+        function () 
+            change_wallpaper(1) 
+        end,
+        {description = "change to next wallpaper", group = "wallpapers"}
+        ),
+    awful.key({ modkey,  }, "#82", 
+        function () 
+            change_wallpaper(-1) 
+        end,
+        {description = "change to next wallpaper", group = "wallpapers"}
+        ),
     -- Dynamic tagging
     awful.key({ modkey, "Shift" }, "n", function () lain.util.add_tag() end,
               {description = "add new tag", group = "tag"}),
@@ -316,7 +367,7 @@ globalkeys = gears.table.join(
               {description = "open a terminal", group = "launcher"}),
     awful.key({ modkey,           }, "p", function () awful.spawn('pcmanfm') end,
               {description = "open a file explorer", group = "launcher"}),
-    awful.key({ modkey,           }, "q", function () awful.spawn('brave-browser') end,
+    awful.key({ modkey,           }, "q", function () awful.spawn('brave') end,
               {description = "open a terminal", group = "launcher"}),
     awful.key({ modkey, "Control" }, "r", awesome.restart,
               {description = "reload awesome", group = "awesome"}),
@@ -584,9 +635,9 @@ client.connect_signal("manage", function (c)
     end
     
     -- rounded corners
-    --[
+    --[[
     c.shape = function(cr,w,h)
-        gears.shape.rounded_rect(cr,w,h,8)
+        gears.shape.rounded_rect(cr,w,h,10)
     end
     --]]
 

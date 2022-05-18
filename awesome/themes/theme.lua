@@ -47,10 +47,10 @@ theme.fg_focus      = nord[8]
 theme.fg_urgent     = nord[1]
 theme.fg_minimize   = "#ffffff"
 
-theme.useless_gap   = dpi(4)
-theme.border_width  = dpi(1)
-theme.border_normal = "#000000"
-theme.border_focus  = "#535d6c"
+theme.useless_gap   = dpi(6)
+theme.border_width  = dpi(2)
+theme.border_normal = "#4C566A"
+theme.border_focus  = "#88C0D0"
 theme.border_marked = "#91231c"
 
 -- There are other variable sets
@@ -93,7 +93,41 @@ theme.menu_width  = dpi(100)
 -- beautiful.variable in your rc.lua
 --theme.bg_widget = "#cc0000"
 
-theme.wallpaper = "/home/nemantzia/Downloads/wallpapers/big_gun_back_turned.jpg"
+
+
+-- Set a random wallpaper every time from the defined directory
+
+
+
+function mysplit (inputstr, sep)
+        if sep == nil then
+                sep = "%s"
+        end
+        local t={}
+        for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+                table.insert(t, str)
+        end
+        return t
+end
+
+local wallpapers_dir = '/home/nemantzia/Downloads/Wallpapers/sfw/'
+local tmp_file = '/home/nemantzia/tmp/.awesome_wallpaper_idx'
+
+local handle = io.popen("ls -1 " .. wallpapers_dir)
+local wallpapers = mysplit(handle:read("*a"), '\n')
+handle:close()
+
+math.randomseed(os.time())
+local idx = math.random(#wallpapers)
+theme.wallpaper = wallpapers_dir .. wallpapers[idx]
+
+handle = io.open(tmp_file, "w")
+io.output(handle)
+io.write(tostring(idx))
+io.close(handle)
+
+
+
 
 -- You can use your own layout icons like this:
 theme.layout_fairh = themes_path.."default/layouts/fairhw.png"
