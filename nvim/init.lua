@@ -23,7 +23,14 @@ require('packer').startup(function(use)
     use 'onsails/lspkind-nvim'
     use 'preservim/nerdtree'
     use 'ThePrimeagen/harpoon'
-    use 'iamcco/markdown-preview.nvim'
+    use 'mfussenegger/nvim-dap'
+    -- install without yarn or npm
+    use({
+        "iamcco/markdown-preview.nvim",
+        run = function() vim.fn["mkdp#util#install"]() end,
+    })
+
+    use({ "iamcco/markdown-preview.nvim", run = "cd app && npm install", setup = function() vim.g.mkdp_filetypes = { "markdown" } end, ft = { "markdown" }, })
     use { 'alvarosevilla95/luatab.nvim', requires='kyazdani42/nvim-web-devicons' }
     use {
         'nvim-telescope/telescope.nvim',
@@ -62,7 +69,7 @@ opt.wrap                   =          false
 opt.showcmd                =          true
 opt.shiftwidth             =          4
 opt.background             =          'dark'
-opt.scrolloff              =          7
+opt.scrolloff              =          10
 opt.tabstop                =          4
 opt.syntax                 =          'on'
 opt.mouse                  =          'a'
@@ -124,6 +131,7 @@ vim.g.floaterm_keymap_kill = '<F10>'
 
 vim.api.nvim_set_keymap("n", "ff", ":lua require('telescope.builtin').find_files()<CR>", {noremap=true})
 vim.api.nvim_set_keymap("n", "fg", ":lua require('telescope.builtin').live_grep()<CR>", {noremap=true})
+vim.api.nvim_set_keymap("n", "fb", ":Telescope buffers<CR>", {noremap=true})
 
 -- Lsp, autocomplete, snippets
 require('lspconfig').pyright.setup{}
@@ -198,17 +206,70 @@ if not lspconfig.emmet_ls then
   }
 end
 
-local servers = {'pyright', 'intelephense', 'tsserver', 'emmet_ls'}
+
+
+-- Mappings.
+-- See `:help vim.diagnostic.*` for documentation on any of the below functions
+local opts = { noremap=true, silent=true }
+vim.api.nvim_set_keymap('n', '<space>e', '<cmd>lua vim.diagnostic.open_float()<CR>', opts)
+vim.api.nvim_set_keymap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
+vim.api.nvim_set_keymap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
+vim.api.nvim_set_keymap('n', '<space>q', '<cmd>lua vim.diagnostic.setloclist()<CR>', opts)
+
+-- Use an on_attach function to only map the following keys
+-- after the language server attaches to the current buffer
+local on_attach = function(client, bufnr)
+  -- Enable completion triggered by <c-x><c-o>
+  vim.api.nvim_buf_set_option(bufnr, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
+
+  -- Mappings.
+  -- See `:help vim.lsp.*` for documentation on any of the below functions
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<C-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>D', '<cmd>lua vim.lsp.buf.type_definition()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>ca', '<cmd>lua vim.lsp.buf.code_action()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gr', '<cmd>lua vim.lsp.buf.references()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>f', '<cmd>lua vim.lsp.buf.format{ async = true }<CR>', opts)
+end
+
+
+local servers = {'pyright', 'intelephense', 'tsserver', 'emmet_ls', 'html'}
 for _, lsp in pairs(servers) do
   require('lspconfig')[lsp].setup {
+    on_attach = on_attach,
     capabilities = capabilities
   }
 end
 
 
-require'lspconfig'.html.setup {
-  capabilities = capabilities,
-}
+require('rust-tools').setup({})
+
+require('lspconfig').rust_analyzer.setup({
+    on_attach=on_attach,
+    settings = {
+        ["rust-analyzer"] = {
+            assist = {
+                importGranularity = "module",
+                importPrefix = "self",
+            },
+            cargo = {
+                loadOutDirsFromCheck = true
+            },
+            procMacro = {
+                enable = true
+            },
+        }
+    }
+})
+
+
 
 
 require'nvim-treesitter.configs'.setup {
@@ -233,10 +294,6 @@ require'nvim-treesitter.configs'.setup {
   },
 }
 
-require('rust-tools').setup({})
-
---vim.cmd('autocmd CursorMoved * :lua vim.diagnostic.open_float()')
-
 
 
 -- colorscheme
@@ -251,39 +308,7 @@ vim.g.nord_cursorline_transparent = false
 vim.cmd[[colorscheme nord]]
 
 
-
--- RUST
-local opts = {
-    tools = { -- rust-tools options
-        autoSetHints = true,
-        hover_with_actions = true,
-        inlay_hints = {
-            show_parameter_hints = false,
-            parameter_hints_prefix = "",
-            other_hints_prefix = "",
-        },
-    },
-
-    -- all the opts to send to nvim-lspconfig
-    -- these override the defaults set by rust-tools.nvim
-    -- see https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#rust_analyzer
-    server = {
-        -- on_attach is a callback called when the language server attachs to the buffer
-        -- on_attach = on_attach,
-        settings = {
-            -- to enable rust-analyzer settings visit:
-            -- https://github.com/rust-analyzer/rust-analyzer/blob/master/docs/user/generated_config.adoc
-            ["rust-analyzer"] = {
-                -- enable clippy on save
-                checkOnSave = {
-                    command = "clippy"
-                },
-            }
-        }
-    },
-}
-
-require('rust-tools').setup(opts)
+-- Lua lsp
 
 local runtime_path = vim.split(package.path, ';')
 table.insert(runtime_path, "lua/?.lua")
@@ -324,3 +349,4 @@ vim.cmd(
    \ | endif
 ]]
 ) -- thank you viml black magic practitioners
+
