@@ -4,3 +4,7 @@ basically just install [ohmyzsh](https://ohmyz.sh/) and set the terminal to use 
 
 
 the basicest of the aliases are set, also nvm lazy load so that it doesn't slow down the shell startup time
+
+`
+git clone https://github.com/lukechilds/zsh-nvm $ZSH/custom/plugins/zsh-nvm
+`
